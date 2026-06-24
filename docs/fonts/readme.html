@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>README &#8212; Chaos Gomoku 3D</title>
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<nav >
+    
+    <input type="text" id="nav-search" placeholder="Search" />
+    
+    
+    <h2><a href="./index.html">Home</a></h2><h2><a href="./readme.html" class="menu-item" id="readme_link" >README</a></h2><h3>Namespaces</h3><ul><li><a href="ChaosGomoku3D.html">ChaosGomoku3D</a><ul class='members'><li data-type='member'><a href="ChaosGomoku3D.html#.ERROR">ERROR</a></li><li data-type='member'><a href="ChaosGomoku3D.html#.place">place</a></li><li data-type='member'><a href="ChaosGomoku3D.html#.useSkill">useSkill</a></li><li data-type='member'><a href="ChaosGomoku3D.html#.endTurn">endTurn</a></li></ul><ul class='methods'><li data-type='method'><a href="ChaosGomoku3D.html#.canApply">canApply</a></li><li data-type='method'><a href="ChaosGomoku3D.html#.applyAction">applyAction</a></li><li data-type='method'><a href="ChaosGomoku3D.html#.createGame">createGame</a></li><li data-type='method'><a href="ChaosGomoku3D.html#.getCurrentPlayer">getCurrentPlayer</a></li><li data-type='method'><a href="ChaosGomoku3D.html#.isGameOver">isGameOver</a></li><li data-type='method'><a href="ChaosGomoku3D.html#.getResult">getResult</a></li><li data-type='method'><a href="ChaosGomoku3D.html#.getLegalActions">getLegalActions</a></li></ul></li></ul>
+    
+</nav>
+
+<div id="main">
+<h1 class="page-title">README</h1>
+<section><article class="readme"><h1>CHAOS GOMOKU 3D</h1>
+<blockquote>
+<p>Five in a row. Physics optional.</p>
+</blockquote>
+<p>This is a browser Gomoku game built with JavaScript and Three.js. It uses a
+15×15 board, seven chaos skills, an AI opponent with three difficulty levels,
+local two-player mode, pixel-style menus, sound, and a short intro.</p>
+<p>Three.js is included in the project under <code>web-app/vendor/</code>, so the game does not
+need a CDN for the 3D board. The font has a fallback if it cannot load.</p>
+<hr>
+<h2>How to play</h2>
+<ul>
+<li><strong>Goal:</strong> connect <strong>five</strong> of your stones in a row — horizontal, vertical, or
+diagonal — before your opponent. Six or more in a row also wins.</li>
+<li><strong>A turn:</strong> place one stone on an empty intersection, then optionally use <strong>one</strong>
+skill. Most skills end your turn and go on cooldown.</li>
+<li><strong>Vs AI:</strong> the player is black and moves first; the AI is white.</li>
+<li><strong>No draws:</strong> if the board fills with no winner, it clears and the match keeps
+going.</li>
+<li><strong>Camera:</strong> left-drag orbit · wheel zoom · right/middle-drag pan. Touch: one
+finger orbit, pinch zoom, two-finger pan.</li>
+<li><strong>Keyboard:</strong> Tab to the board, arrow keys move the cursor, <strong>Enter / Space</strong>
+places a stone, and <strong>Escape</strong> cancels skill targeting.</li>
+</ul>
+<p>Skills are explained in more detail in <code>RULES.md</code>: YEET METEOR, FINDERS KEEPERS,
+SPRING CLEANING, ABSOLUTE ZERO, CTRL + Z, CORPORATE RESTRUCTURING, and TABLE FLIP.</p>
+<hr>
+<h2>Characters</h2>
+<p>Before a match you choose an avatar:</p>
+<ul>
+<li>Five player characters: Vex Cinder, Auditor Quill, Shroud, Sprocket, and Lord
+Ember.</li>
+<li>In local two-player mode both players choose a character. Duplicate picks are
+blocked unless &quot;allow same character&quot; is enabled.</li>
+<li>In vs-AI mode the player chooses one character; the AI uses the robot avatar.</li>
+<li>Doctor Beepboop is used for tutorial / hint dialogue and is not playable.</li>
+<li>Character choice is cosmetic. It changes the avatar and displayed name, not the
+rules, skills, AI, or balance.</li>
+</ul>
+<p>Image assets live under:</p>
+<pre><code class="language-text">web-app/assets/avatars/      # the 7 PNG avatars used by the game
+web-app/assets/source-art/   # original source images kept for reference
+</code></pre>
+<p>Character data is in <code>web-app/characters.js</code>; the selection screen and saved
+selection logic are in <code>web-app/characterSelect.js</code>.</p>
+<hr>
+<h2>Install &amp; run</h2>
+<p>Requires <strong>Node.js 18+</strong>.</p>
+<pre><code class="language-bash">npm install
+npm run dev
+</code></pre>
+<p>Then open the address printed by the dev server, usually
+<code>http://localhost:8000</code>.</p>
+<p>The game uses browser ES modules, so it should be served over <code>http://</code> rather
+than opened by double-clicking <code>index.html</code>.</p>
+<h3>Other commands</h3>
+<pre><code class="language-bash">npm test           # run tests
+npm run test:watch # watch tests
+npm run lint       # run ESLint
+npm run format     # format files with Prettier
+npm run docs       # generate JSDoc pages into docs/
+npm run build      # copy web-app/ into dist/
+</code></pre>
+<hr>
+<h2>Project structure</h2>
+<p>The runnable game is in <code>web-app/</code>. Root files are mostly setup and notes.
+<code>index.html</code> loads one browser entry file, <code>main.js</code>, which starts the UI and
+connects the modules together.</p>
+<pre><code class="language-text">chaos-gomoku-3d/
+├── README.md
+├── RULES.md
+├── ARCHITECTURE.md
+├── package.json
+├── web-app/
+│   ├── index.html
+│   ├── default.css
+│   ├── main.js                 # scene, camera, input, and game flow
+│   ├── ChaosGomoku3D.js         # public game API
+│   ├── gameLogic.js             # internal rule engine
+│   ├── ai.js                    # AI move and skill choices
+│   ├── characters.js
+│   ├── characterSelect.js
+│   ├── ui.js
+│   ├── a11yBoard.js             # keyboard / screen-reader board
+│   ├── audio.js
+│   ├── effects.js               # 3D skill animations
+│   ├── intro.js
+│   ├── renderScheduler.js
+│   ├── rng.js
+│   ├── tests/
+│   ├── assets/
+│   └── vendor/three/
+└── docs/                        # generated JSDoc output
+</code></pre>
+<h2>Game API</h2>
+<p>The main public game API is <code>web-app/ChaosGomoku3D.js</code>.</p>
+<p>Human placement uses this action API. Some older AI and animation code still uses
+the internal <code>Game</code> class directly, mostly to keep the current 3D animation flow
+stable. <code>ARCHITECTURE.md</code> explains the current split.</p>
+<p>Example:</p>
+<pre><code class="language-js">import { createGame, applyAction, place } from &#39;./ChaosGomoku3D.js&#39;;
+
+let game = createGame(&#39;medium&#39;);
+const result = applyAction(game, place(7, 7));
+if (result.ok) {
+  // animate result.events
+}
+</code></pre>
+<h2>Notes</h2>
+<ul>
+<li>The board rules live in <code>gameLogic.js</code>; Three.js meshes are rebuilt from that
+board state.</li>
+<li><code>gameLogic.js</code>, <code>ChaosGomoku3D.js</code>, <code>ai.js</code>, <code>rng.js</code>, and <code>characters.js</code> are
+written as plain JavaScript modules that can be imported by tests without a
+browser.</li>
+<li>Tests use Vitest and cover the rule engine, public API, AI, characters, and
+render scheduler.</li>
+<li>The tests mostly import plain JavaScript modules. Browser modules such as
+<code>main.js</code>, <code>ui.js</code>, and <code>effects.js</code> are not imported by the Node tests.</li>
+<li>Keyboard and screen-reader support is implemented, but the screen-reader path
+should still be checked manually in a browser.</li>
+<li>AI-vs-AI is only used in tests. Since the real game has no draw, a test-only
+AI-vs-AI run uses a move cap.</li>
+</ul>
+<h2>AI Use</h2>
+<p>The core game concept, rule design, and overall project structure were designed
+by me.</p>
+<p>During development, I used AI tools such as ChatGPT and Codex as support tools.
+They helped with parts that were difficult for me to build alone, especially the
+UI, the 3D board, animation effects, documentation, code review, and checking
+whether the game logic was complete.</p>
+<p>AI also helped me polish some ideas and make the project more consistent, but
+the final decisions about what to include, how the game should work, and what to
+submit were made by me. All AI suggestions were reviewed and edited before being
+used.</p>
+<p>See <code>RULES.md</code> for the rules and <code>ARCHITECTURE.md</code> for a simple file-by-file
+overview.</p>
+</article></section>
+</div>
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.5</a> using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+<script src="scripts/search.js" defer></script>
+
+
+
+    <link type="text/css" rel="stylesheet" href="custom.css">
+    
+</body>
+</html>

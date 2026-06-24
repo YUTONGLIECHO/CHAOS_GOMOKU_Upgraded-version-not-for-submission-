@@ -1,16 +1,26 @@
 {
-  "name": "computing-2-submission",
-  "type": "module",
+  "name": "chaos-gomoku-3d",
   "version": "1.0.0",
-  "description": "",
-  "main": "web-app/Module.js",
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "ramda": "^0.32.0"
+  "type": "module",
+  "description": "CHAOS GOMOKU 3D — five-in-a-row with chaos skills on a real Three.js board.",
+  "scripts": {
+    "dev": "http-server -p 8000 -c-1 web-app",
+    "preview": "http-server -p 8000 -c-1 web-app",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "format": "prettier --write \"**/*.{js,css,md,json}\"",
+    "format:check": "prettier --check \"**/*.{js,css,md,json}\"",
+    "docs": "jsdoc -c jsdoc.json && node postdocs.mjs",
+    "build": "node -e \"const fs=require('fs');fs.rmSync('dist',{recursive:true,force:true});fs.cpSync('web-app','dist',{recursive:true});console.log('Built static app -> dist/ ('+fs.readdirSync('dist').length+' top-level entries)')\""
   },
   "devDependencies": {
     "docdash": "^2.0.2",
-    "mocha": "^11.7.5"
+    "eslint": "^9.13.0",
+    "http-server": "^14.1.1",
+    "jsdoc": "^4.0.4",
+    "marked": "^18.0.5",
+    "prettier": "^3.3.3",
+    "vitest": "^2.1.4"
   }
 }

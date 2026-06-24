@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>Home - Documentation</title>
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<nav >
+    
+    <input type="text" id="nav-search" placeholder="Search" />
+    
+    
+    <h2><a href="./index.html">Home</a></h2><h2><a href="./readme.html" class="menu-item" id="readme_link" >README</a></h2><h3>Namespaces</h3><ul><li><a href="ChaosGomoku3D.html">ChaosGomoku3D</a><ul class='members'><li data-type='member'><a href="ChaosGomoku3D.html#.ERROR">ERROR</a></li><li data-type='member'><a href="ChaosGomoku3D.html#.place">place</a></li><li data-type='member'><a href="ChaosGomoku3D.html#.useSkill">useSkill</a></li><li data-type='member'><a href="ChaosGomoku3D.html#.endTurn">endTurn</a></li></ul><ul class='methods'><li data-type='method'><a href="ChaosGomoku3D.html#.canApply">canApply</a></li><li data-type='method'><a href="ChaosGomoku3D.html#.applyAction">applyAction</a></li><li data-type='method'><a href="ChaosGomoku3D.html#.createGame">createGame</a></li><li data-type='method'><a href="ChaosGomoku3D.html#.getCurrentPlayer">getCurrentPlayer</a></li><li data-type='method'><a href="ChaosGomoku3D.html#.isGameOver">isGameOver</a></li><li data-type='method'><a href="ChaosGomoku3D.html#.getResult">getResult</a></li><li data-type='method'><a href="ChaosGomoku3D.html#.getLegalActions">getLegalActions</a></li></ul></li></ul>
+    
+</nav>
+
+<div id="main">
+    
+
+    
+
+
+
+    
+
+
+    <section class="package">
+        <h3> </h3>		
+    </section>
+
+
+
+
+
+
+
+
+
+    
+
+
+
+    <section class="readme usertext">
+        <article><h1>Chaos Gomoku 3D</h1>
+<p><strong>Five in a row. Physics optional.</strong> — a 3D, browser-based Gomoku with chaotic
+skills, an AI opponent, sound and a local two-player mode.</p>
+<p>This site documents the game's <strong>public API</strong>. Everything the UI, AI and tests need
+goes through a single stable module: <strong><a href="ChaosGomoku3D.html"><code>ChaosGomoku3D</code></a></strong>. The
+internal rule engine (<code>gameLogic.js</code>) is <em>not</em> part of the public surface.</p>
+<hr>
+<h2>Quick start</h2>
+<pre class="prettyprint source lang-js"><code>import { createGame, applyAction, place, useSkill, endTurn, ERROR }
+  from './ChaosGomoku3D.js';
+
+const game = createGame('medium');           // fresh board, black to move
+const res  = applyAction(game, place(7, 7)); // -> ActionResult
+
+if (res.ok) {
+  for (const ev of res.events) animate(ev);  // 'place' | 'win' | 'autoFlip' | ...
+} else {
+  console.warn(res.error.code, res.error.message); // e.g. ERROR.CELL_OCCUPIED
+}
+</code></pre>
+<hr>
+<h2>Core public API</h2>
+<table>
+<thead>
+<tr>
+<th>Member</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="ChaosGomoku3D.html#.createGame"><code>createGame(difficulty?)</code></a></td>
+<td>Make a fresh game state.</td>
+</tr>
+<tr>
+<td><a href="ChaosGomoku3D.html#.applyAction"><code>applyAction(game, action, opts?)</code></a></td>
+<td>Validate + apply an action; returns <code>{ ok, state, events }</code> or <code>{ ok:false, error }</code>.</td>
+</tr>
+<tr>
+<td><a href="ChaosGomoku3D.html#.canApply"><code>canApply(game, action)</code></a></td>
+<td>Pure legality check (no mutation).</td>
+</tr>
+<tr>
+<td><a href="ChaosGomoku3D.html#.getLegalActions"><code>getLegalActions(game)</code></a></td>
+<td>Every legal action for the side to move.</td>
+</tr>
+<tr>
+<td><a href="ChaosGomoku3D.html#.getResult"><code>getResult(game)</code></a> · <a href="ChaosGomoku3D.html#.isGameOver"><code>isGameOver</code></a> · <a href="ChaosGomoku3D.html#.getCurrentPlayer"><code>getCurrentPlayer</code></a></td>
+<td>Read game status.</td>
+</tr>
+<tr>
+<td><a href="ChaosGomoku3D.html#.place"><code>place</code></a> · <a href="ChaosGomoku3D.html#.useSkill"><code>useSkill</code></a> · <a href="ChaosGomoku3D.html#.endTurn"><code>endTurn</code></a></td>
+<td>Action creators.</td>
+</tr>
+<tr>
+<td><a href="ChaosGomoku3D.html#.ERROR"><code>ERROR</code></a></td>
+<td>Stable error-code map.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Types:</strong> <code>GameState</code>, <code>GameAction</code>, <code>PlaceAction</code>, <code>SkillAction</code>, <code>EndTurnAction</code>,
+<code>ActionResult</code>, <code>ActionError</code>, <code>GameEvent</code> — see the <strong>Global</strong> section in the left nav.</p>
+<hr>
+<h2>Running the game</h2>
+<p>The game is <strong>not</strong> linked from this documentation, because it must be served
+over HTTP (its ES-module scripts won't run from a <code>file://</code> page). To play it
+locally:</p>
+<pre class="prettyprint source lang-bash"><code>npm install
+npm run dev
+</code></pre>
+<p>Then open the address the dev server prints (by default
+<code>http://localhost:8000</code>).</p>
+<hr>
+<h2>Links</h2>
+<ul>
+<li><strong>Public API reference →</strong> <a href="ChaosGomoku3D.html"><code>ChaosGomoku3D</code></a></li>
+<li><strong>Source →</strong> <a href="ChaosGomoku3D.js.html"><code>ChaosGomoku3D.js</code></a></li>
+<li><strong>README →</strong> <a href="readme.html"><code>readme.html</code></a></li>
+</ul></article>
+    </section>
+
+
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.5</a> using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+<script src="scripts/search.js" defer></script>
+
+
+
+    <link type="text/css" rel="stylesheet" href="custom.css">
+    
+</body>
+</html>
