@@ -1,0 +1,424 @@
+/**
+ * Public game API for CHAOS GOMOKU 3D.
+ *
+ * This module creates games and applies player actions. `applyAction` checks an
+ * action, mutates the current `Game` object, and returns events the UI can
+ * animate. Some older AI and animation paths still call `gameLogic.js` directly;
+ * see ARCHITECTURE.md for the current split.
+ *
+ * @namespace ChaosGomoku3D
+ */
+
+/**
+ * Public shape of the internal `Game` object. UI-only fields such as meshes or
+ * camera position live in main.js.
+ * @typedef {Object} GameState
+ * @property {number[][]} board        15×15 grid; 0 empty, 1 black/PLAYER, 2 white/AI.
+ * @property {(1|2)} current           Side to move (1 = black, 2 = white).
+ * @property {('menu'|'place'|'over')} phase  Coarse game phase.
+ * @property {(1|2|null)} winner       Winning side once decided, else null.
+ * @property {number[][]|null} winLine The five winning cells, else null.
+ * @property {boolean} placedThisTurn  Whether the side to move has placed yet.
+ * @property {Object} cooldowns        Per-side remaining skill cooldowns.
+ * @property {Object} usedOnce         Per-side once-per-game skills already spent.
+ * @property {Object} frozen           Per-side "skills frozen next turn" flags.
+ */
+
+/**
+ * A PLACE action: drop a stone at (r, c).
+ * @typedef {Object} PlaceAction
+ * @property {'PLACE'} type
+ * @property {number} r  Row, 0–14.
+ * @property {number} c  Column, 0–14.
+ */
+
+/**
+ * A SKILL action: fire a chaos skill, optionally at a target cell.
+ * @typedef {Object} SkillAction
+ * @property {'SKILL'} type
+ * @property {SkillId} id            Which skill.
+ * @property {number[]|null} target  `[r, c]` for targeted skills, else null.
+ */
+
+/**
+ * An END_TURN action: hand the turn to the opponent.
+ * @typedef {Object} EndTurnAction
+ * @property {'END_TURN'} type
+ */
+
+/**
+ * Any action that can be passed to {@link ChaosGomoku3D.applyAction}.
+ * @typedef {(PlaceAction|SkillAction|EndTurnAction)} GameAction
+ */
+
+/**
+ * One of the stable error codes from {@link ChaosGomoku3D.ERROR}.
+ * @typedef {string} ErrorCode
+ */
+
+/**
+ * The structured error returned when an action is illegal.
+ * @typedef {Object} ActionError
+ * @property {ErrorCode} code    Stable, machine-readable code (see ERROR).
+ * @property {string} message    Human-readable explanation for the UI.
+ */
+
+/**
+ * The result of {@link ChaosGomoku3D.applyAction} / {@link ChaosGomoku3D.canApply}.
+ * On success, `state` is the (mutated) game and `events` lists what happened so
+ * the view can animate it. On failure, `error` explains why; the state is
+ * unchanged. `applyAction` never throws for an illegal action — it returns
+ * `{ ok: false }`.
+ * @typedef {Object} ActionResult
+ * @property {boolean} ok                 true on success, false if rejected.
+ * @property {GameState} [state]          Present when ok; the game after the action.
+ * @property {GameEvent[]} [events]       Present when ok; ordered effects to animate.
+ * @property {ActionError} [error]        Present when not ok.
+ */
+
+/**
+ * Event returned by `applyAction` so the UI knows what to animate. Common types
+ * include `place`, `remove`, `clearBoard`, `win`, and `turnEnded`.
+ * @typedef {Object} GameEvent
+ * @property {string} type     The event kind.
+ * @property {*} [.]           Type-specific payload (r, c, side, line, …).
+ */
+
+/**
+ * @typedef {('yeet'|'finders'|'spring'|'zero'|'ctrlz'|'corporate'|'flip')} SkillId
+ */
+
+import { Game, opp, SKILL_BY_ID, SKILLS } from './gameLogic.js';
+import { defaultRng, shuffle } from './rng.js';
+
+/**
+ * Stable error codes returned in {@link ActionError}. The UI maps these to
+ * user-facing text. Frozen so callers can rely on the set.
+ * @enum {string}
+ * @readonly
+ * @memberof ChaosGomoku3D
+ */
+export const ERROR = Object.freeze({
+  GAME_OVER: 'GAME_OVER',
+  WRONG_PHASE: 'WRONG_PHASE',
+  ALREADY_PLACED: 'ALREADY_PLACED',
+  NOT_PLACED_YET: 'NOT_PLACED_YET',
+  OUT_OF_BOUNDS: 'OUT_OF_BOUNDS',
+  CELL_OCCUPIED: 'CELL_OCCUPIED',
+  SKILL_UNKNOWN: 'SKILL_UNKNOWN',
+  SKILL_NOT_READY: 'SKILL_NOT_READY',
+  SKILL_FROZEN: 'SKILL_FROZEN',
+  SKILL_USED_THIS_TURN: 'SKILL_USED_THIS_TURN',
+  TARGET_REQUIRED: 'TARGET_REQUIRED',
+  TARGET_INVALID: 'TARGET_INVALID',
+  NOTHING_TO_UNDO: 'NOTHING_TO_UNDO',
+  ACTION_UNKNOWN: 'ACTION_UNKNOWN',
+});
+
+/**
+ * Create a PLACE action.
+ * @param {number} r  Row, 0–14.
+ * @param {number} c  Column, 0–14.
+ * @returns {PlaceAction}
+ * @memberof ChaosGomoku3D
+ */
+export const place = (r, c) => ({ type: 'PLACE', r, c });
+
+/**
+ * Create a SKILL action.
+ * @param {SkillId} id            Which skill to use.
+ * @param {number[]|null} [target=null]  `[r, c]` for targeted skills.
+ * @returns {SkillAction}
+ * @memberof ChaosGomoku3D
+ */
+export const useSkill = (id, target = null) => ({ type: 'SKILL', id, target });
+
+/**
+ * Create an END_TURN action.
+ * @returns {EndTurnAction}
+ * @memberof ChaosGomoku3D
+ */
+export const endTurn = () => ({ type: 'END_TURN' });
+
+const fail = (code, message) => ({ ok: false, error: { code, message } });
+const ok = (game, events) => ({ ok: true, state: game, events });
+
+/**
+ * Pure legality check — never mutates. Use this to grey out illegal moves in the
+ * UI before committing them with {@link ChaosGomoku3D.applyAction}.
+ * @param {GameState} game     The current game.
+ * @param {GameAction} action  The action to validate.
+ * @returns {ActionResult} `{ ok: true }` if legal, otherwise `{ ok: false, error }`.
+ * @memberof ChaosGomoku3D
+ */
+export function canApply(game, action) {
+  if (game.isOver()) return fail(ERROR.GAME_OVER, 'The game is already over.');
+  const side = game.current;
+
+  switch (action.type) {
+    case 'PLACE': {
+      if (game.phase !== 'place') return fail(ERROR.WRONG_PHASE, 'Not in the placing phase.');
+      if (game.placedThisTurn) return fail(ERROR.ALREADY_PLACED, 'You already placed this turn.');
+      if (!game.inBounds(action.r, action.c)) return fail(ERROR.OUT_OF_BOUNDS, 'That cell is off the board.');
+      if (!game.isEmpty(action.r, action.c)) return fail(ERROR.CELL_OCCUPIED, 'That cell is occupied.');
+      return { ok: true };
+    }
+    case 'SKILL': {
+      const def = SKILL_BY_ID[action.id];
+      if (!def) return fail(ERROR.SKILL_UNKNOWN, `Unknown skill: ${action.id}`);
+      if (game.frozen[side]) return fail(ERROR.SKILL_FROZEN, 'Your skills are frozen this turn.');
+      if (!game.placedThisTurn) return fail(ERROR.NOT_PLACED_YET, 'Place a piece before using a skill.');
+      if (game.usedSkillThisTurn) return fail(ERROR.SKILL_USED_THIS_TURN, 'Only one skill per turn.');
+      if (!game.skillReady(side, action.id)) return fail(ERROR.SKILL_NOT_READY, 'That skill is not ready.');
+      if (action.id === 'ctrlz' && !game.canUndo(side)) {
+        return fail(ERROR.NOTHING_TO_UNDO, 'There is nothing to undo.');
+      }
+      if (def.targeted) {
+        const t = action.target;
+        if (!t) return fail(ERROR.TARGET_REQUIRED, 'This skill needs an enemy target.');
+        const [tr, tc] = Array.isArray(t) ? t : [t.r, t.c];
+        if (!game.inBounds(tr, tc) || game.board[tr][tc] !== opp(side)) {
+          return fail(ERROR.TARGET_INVALID, 'Target must be an enemy piece.');
+        }
+      }
+      return { ok: true };
+    }
+    case 'END_TURN': {
+      if (!game.placedThisTurn) return fail(ERROR.NOT_PLACED_YET, 'Place a piece before ending your turn.');
+      return { ok: true };
+    }
+    default:
+      return fail(ERROR.ACTION_UNKNOWN, `Unknown action: ${action.type}`);
+  }
+}
+
+// Resolve a win after a board mutation, append the right terminal event, and
+// report whether the game ended. Shared by PLACE and skill paths.
+function settleAfterMutation(game, side, events, { skillId = null } = {}) {
+  if (skillId) {
+    const res = game.resolveAfterSkill(side, skillId);
+    if (res) {
+      game.setWinner(res.winner, res.line);
+      events.push({ type: 'win', side: res.winner, line: res.line });
+      return true;
+    }
+  } else {
+    const five = game.findFive(side);
+    if (five) {
+      game.setWinner(side, five);
+      events.push({ type: 'win', side, line: five });
+      return true;
+    }
+  }
+  // No winner. A completely full board does NOT draw — instead the table is
+  // auto-flipped (board cleared) and play continues. This is a system event and
+  // does NOT consume either side's once-per-game TABLE FLIP skill.
+  if (game.isFull()) {
+    game.clearBoard();
+    events.push({ type: 'autoFlip' });
+    return false; // game continues on a fresh board; turn is unaffected
+  }
+  return false;
+}
+
+function advanceTurn(game, side, events) {
+  game.endTurn(side);
+  events.push({ type: 'turnEnded', side });
+  if (!game.isOver()) events.push({ type: 'turnStarted', side: game.current });
+}
+
+/**
+ * Validate, then apply an action to `game`. This is the single entry point every
+ * game-changing action goes through. On success it mutates the game and returns
+ * the ordered {@link ChaosGomoku3D.GameEvent events} for the view to animate; on
+ * an illegal action it does **not** throw and does **not** change state — it
+ * returns `{ ok: false, error }` with a stable {@link ChaosGomoku3D.ERROR} code.
+ * @param {GameState} game        The current game (mutated in place on success).
+ * @param {GameAction} action     The action to apply (see {@link ChaosGomoku3D.place} etc.).
+ * @param {object} [opts]         Options.
+ * @param {object} [opts.rng]     Injected random source for SPRING/FINDERS; defaults to Math.random.
+ * @returns {ActionResult} `{ ok, state, events }` on success, or `{ ok: false, error }`.
+ * @memberof ChaosGomoku3D
+ */
+export function applyAction(game, action, opts = {}) {
+  const check = canApply(game, action);
+  if (!check.ok) return check;
+
+  const rng = opts.rng || defaultRng;
+  const side = game.current;
+  const foe = opp(side);
+  const events = [];
+
+  switch (action.type) {
+    case 'PLACE': {
+      game.placePiece(action.r, action.c, side);
+      game.placedThisTurn = true;
+      events.push({ type: 'place', r: action.r, c: action.c, side });
+      settleAfterMutation(game, side, events); // win or draw, if any
+      // Note: on a non-terminal place the turn intentionally STAYS with `side`
+      // (they may now use a skill or END_TURN).
+      return ok(game, events);
+    }
+
+    case 'SKILL':
+      return applySkill(game, action, { rng, side, foe, events });
+
+    case 'END_TURN': {
+      advanceTurn(game, side, events);
+      return ok(game, events);
+    }
+
+    default:
+      return fail(ERROR.ACTION_UNKNOWN, `Unknown action: ${action.type}`);
+  }
+}
+
+function applySkill(game, action, { rng, side, foe, events }) {
+  const id = action.id;
+
+  switch (id) {
+    case 'yeet': {
+      const [r, c] = Array.isArray(action.target) ? action.target : [action.target.r, action.target.c];
+      game.removeAt(r, c);
+      events.push({ type: 'remove', r, c, side: foe });
+      game.markSkillUsed(side, id);
+      break;
+    }
+    case 'finders': {
+      const [r, c] = Array.isArray(action.target) ? action.target : [action.target.r, action.target.c];
+      game.removeAt(r, c);
+      const empties = game.emptyCells();
+      const dest = empties.length ? rng.pick(empties) : [r, c];
+      game.placePiece(dest[0], dest[1], foe);
+      events.push({ type: 'remove', r, c, side: foe });
+      events.push({ type: 'place', r: dest[0], c: dest[1], side: foe, relocated: true });
+      game.markSkillUsed(side, id);
+      break;
+    }
+    case 'spring': {
+      const enemies = game.piecesOf(foe);
+      const n = Math.min(enemies.length, 1 + rng.int(3));
+      const chosen = shuffle([...enemies], rng).slice(0, n);
+      for (const [r, c] of chosen) {
+        game.removeAt(r, c);
+        events.push({ type: 'remove', r, c, side: foe });
+      }
+      game.markSkillUsed(side, id);
+      break;
+    }
+    case 'zero': {
+      game.freezeSkills(foe);
+      events.push({ type: 'freeze', side: foe });
+      game.markSkillUsed(side, id);
+      break;
+    }
+    case 'corporate': {
+      game.swapAllColors();
+      events.push({ type: 'swapColors' });
+      game.markSkillUsed(side, id);
+      break;
+    }
+    case 'flip': {
+      game.clearBoard();
+      events.push({ type: 'clearBoard' });
+      game.markSkillUsed(side, id);
+      break;
+    }
+    case 'ctrlz': {
+      // Special: rewinds the opponent's last turn and KEEPS the turn with side
+      // (fresh place + optional skill). undoLastOpponentTurn marks ctrlz spent.
+      game.undoLastOpponentTurn(side);
+      events.push({ type: 'undo' }, { type: 'turnStarted', side });
+      return ok(game, events); // no win-resolution / no turn handover
+    }
+    default:
+      return fail(ERROR.SKILL_UNKNOWN, `Unknown skill: ${id}`);
+  }
+
+  events.push({ type: 'skillUsed', id, side });
+  const ended = settleAfterMutation(game, side, events, { skillId: id });
+  if (!ended) advanceTurn(game, side, events); // standard skills end the turn
+  return ok(game, events);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PUBLIC API FAÇADE
+// These are the functions the UI, AI and tests are meant to use. The `Game`
+// class in gameLogic.js is the internal engine and should not be driven method
+// by method from outside — go through createGame + applyAction + the selectors
+// below. See ARCHITECTURE.md ("Public API").
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Create a fresh game in its initial state (empty board, black to move).
+ * @param {('easy'|'medium'|'hard')} [difficulty='medium'] AI difficulty tuning.
+ * @returns {GameState} A new game ready for the first turn.
+ * @memberof ChaosGomoku3D
+ */
+export function createGame(difficulty = 'medium') {
+  const g = new Game();
+  g.reset(difficulty);
+  g.startTurn(g.current, true); // first turn: no cooldown tick
+  return g;
+}
+
+/**
+ * The side whose turn it is right now.
+ * @param {GameState} game
+ * @returns {(1|2)} PLAYER (1) or AI (2).
+ * @memberof ChaosGomoku3D
+ */
+export function getCurrentPlayer(game) {
+  return game.current;
+}
+
+/**
+ * Whether the game has finished (someone has five in a row).
+ * @param {GameState} game
+ * @returns {boolean}
+ * @memberof ChaosGomoku3D
+ */
+export function isGameOver(game) {
+  return game.isOver();
+}
+
+/**
+ * The final result, or null while the game is still in progress.
+ * Note: this game has no draw — a full board auto-flips and play continues.
+ * @param {GameState} game
+ * @returns {{winner:(1|2), line:number[][]}|null}
+ * @memberof ChaosGomoku3D
+ */
+export function getResult(game) {
+  if (!game.isOver()) return null;
+  return { winner: game.winner, line: game.winLine };
+}
+
+/**
+ * Every legal action for the side to move right now. Useful for the AI, for
+ * keyboard navigation hints, and for tests. PLACE actions are listed for every
+ * empty cell; SKILL actions for every currently usable skill; END_TURN once a
+ * piece has been placed.
+ * @param {GameState} game
+ * @returns {GameAction[]} Every legal action for the side to move.
+ * @memberof ChaosGomoku3D
+ */
+export function getLegalActions(game) {
+  const out = [];
+  if (game.isOver()) return out;
+  if (!game.placedThisTurn) {
+    for (const [r, c] of game.emptyCells()) out.push(place(r, c));
+    return out; // must place before skills / ending
+  }
+  out.push(endTurn());
+  for (const def of SKILLS) {
+    if (canApply(game, useSkill(def.id)).ok) out.push(useSkill(def.id));
+    else if (def.targeted && game.skillReady(game.current, def.id) && !game.frozen[game.current]) {
+      // targeted skills need a concrete enemy target to be "legal"; expose one per enemy stone
+      for (const [r, c] of game.piecesOf(opp(game.current))) {
+        if (canApply(game, useSkill(def.id, [r, c])).ok) out.push(useSkill(def.id, [r, c]));
+      }
+    }
+  }
+  return out;
+}

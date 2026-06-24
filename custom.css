@@ -1,0 +1,250 @@
+/* ==========================================================================
+   Chaos Gomoku 3D — JSDoc (docdash) theme
+   Minimal TWO-colour system: dark red + gold-yellow, on white/grey neutrals.
+   Connect4-style structure: clear left nav, white main, each API member gets a
+   SOLID dark-red title block with white main text and yellow emphasis.
+   The only solid hex values are the 8 palette tokens below; soft hover/selected
+   states are rgba() opacity variations of red / yellow / grey — no new hues.
+   custom.css loads AFTER docdash's bundled jsdoc.css; !important is used ONLY to
+   neutralise docdash's own forced dark/tinted rules (grouped at the end).
+   No game code is touched.
+   ========================================================================== */
+
+:root {
+  --red-main:   #942B2B;  /* dark red — title blocks, links, accents */
+  --red-deep:   #4D1211;  /* deeper red — hover, borders, current state */
+  --yellow-main:#B78A4E;  /* gold-yellow — emphasis text, lines, focus */
+  --white:      #FFFFFF;
+  --bg:         #FAFAFA;   /* page background (near-white grey) */
+  --panel:      #FFFFFF;   /* main content / cards */
+  --text:       #222222;
+  --text-muted: #666666;
+  --border:     #DDDDDD;
+
+  /* soft states = opacity of the palette only (no new colour) */
+  --red-soft:    rgba(148, 43, 43, 0.08);
+  --yellow-soft: rgba(183, 138, 78, 0.16);
+  --yellow-faint:rgba(183, 138, 78, 0.08);
+  --grey-soft:   rgba(34, 34, 34, 0.05);
+  --code-bg:     rgba(34, 34, 34, 0.045);
+
+  --max-main: 1040px;
+  --nav-w: 264px;
+  --sans: "Inter", "Source Sans Pro", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --head: "Montserrat", "Inter", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --mono: ui-monospace, "SFMono-Regular", "JetBrains Mono", "Menlo", "Consolas", monospace;
+}
+
+/* ---- base ---------------------------------------------------------------- */
+html { font-size: 17px; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font-family: var(--sans); line-height: 1.62; -webkit-font-smoothing: antialiased;
+}
+a, a:visited { color: var(--red-main); text-decoration: none; }
+a:hover { color: var(--red-deep); text-decoration: underline; }
+a:focus-visible { outline: 2px solid var(--yellow-main); outline-offset: 2px; border-radius: 2px; }
+p { margin: 0 0 1em; }
+hr { border: none; border-top: 1px solid var(--border); margin: 1.6em 0; }
+code, tt, kbd { font-family: var(--mono); }
+::selection { background: var(--yellow-soft); color: var(--red-deep); }
+
+/* ---- left navigation (white / very light grey) --------------------------- */
+nav {
+  position: fixed; top: 0; left: 0; bottom: 0; width: var(--nav-w); z-index: 20;
+  box-sizing: border-box; background: var(--bg);
+  border-right: 1px solid var(--border); overflow-y: auto;
+  padding: 22px 16px 60px; font-size: 0.92rem; color: var(--text);
+}
+nav h2 { margin: 0 0 14px; font-family: var(--head); }
+nav h2 > a { color: var(--red-main); font-weight: 700; font-size: 1.05rem; }
+nav h2 > a:hover { color: var(--red-deep); }
+nav h3 {
+  margin: 22px 0 6px; font-family: var(--head); font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.09em; text-transform: uppercase; color: var(--text);
+}
+nav ul { list-style: none; margin: 0 0 4px; padding: 0; }
+nav ul li { margin: 1px 0; }
+nav ul li a, nav > ul > li > a {
+  display: block; padding: 4px 10px; border-radius: 3px;
+  color: var(--red-main); line-height: 1.4; border-left: 3px solid transparent;
+}
+nav ul li a:hover { background: var(--grey-soft); color: var(--red-deep); text-decoration: none; }
+nav > ul > li > a, nav h3 + ul > li > a { color: var(--red-main); font-weight: 600; }
+nav ul ul { margin-left: 8px; border-left: 1px solid var(--border); padding-left: 6px; }
+nav .nav-item-type { display: none; }
+nav li.active > a, nav a.active {
+  background: var(--grey-soft); color: var(--red-deep);
+  font-weight: 600; border-left: 3px solid var(--red-main);
+}
+#nav-search, .nav-search { margin: 4px 0 14px; }
+#nav-search input, .nav-search input {
+  width: 100%; box-sizing: border-box; padding: 7px 10px;
+  border: 1px solid var(--border); border-radius: 4px; font: inherit;
+  background: var(--white); color: var(--text);
+}
+#nav-search input::placeholder { color: var(--text-muted); }
+nav .menu a, .menu-item { display: inline-block; margin: 2px 8px 2px 0; color: var(--red-main); }
+
+/* ---- main content (white) ------------------------------------------------ */
+#main {
+  margin-left: var(--nav-w); padding: 40px clamp(24px, 5vw, 64px) 96px;
+  max-width: var(--max-main); box-sizing: border-box; background: var(--panel);
+}
+@media (min-width: 1500px) { #main { margin-left: calc(var(--nav-w) + 4vw); } }
+
+/* page big title: dark-red text + thin yellow underline */
+.page-title, #main h1:not(.page-title) {
+  font-family: var(--head); font-weight: 700; line-height: 1.12;
+  color: var(--red-main); background: none; margin: 0 0 22px;
+  padding: 4px 0 12px; border-bottom: 3px solid var(--yellow-main);
+}
+.page-title { font-size: clamp(2.3rem, 4vw, 3.1rem); }
+#main h1:not(.page-title) { font-size: clamp(2.2rem, 4vw, 3rem); }
+
+/* section titles (Members / Methods / Type Definitions):
+   white, with strong red left bar + yellow underline (clear structural lines) */
+.subsection-title, h3.subsection-title {
+  font-family: var(--head); font-size: 1.4rem; font-weight: 700;
+  color: var(--red-main); background: var(--white);
+  border-left: 5px solid var(--red-main); border-bottom: 2px solid var(--yellow-main);
+  padding: 10px 16px; border-radius: 0; margin: 38px 0 20px;
+}
+
+/* === API MEMBER TITLE BLOCK — solid dark-red block, white text, yellow accents === */
+h4.name {
+  font-family: var(--mono); font-size: 1.08rem; font-weight: 600;
+  color: var(--white); background: var(--red-main);
+  border: none; border-radius: 4px;
+  padding: 13px 18px; margin: 32px 0 14px; overflow-x: auto;
+}
+h4.name .type-signature, h4.name .signature { color: var(--yellow-main); }
+h4.name a, h4.name a:visited { color: var(--yellow-main); text-decoration: none; }
+h4.name a:hover { color: var(--white); text-decoration: underline; }
+.name .attributes, .signature .signature-attributes { color: var(--yellow-main); font-style: italic; }
+.type-signature, .signature { font-family: var(--mono); }
+
+/* body text — white bg, dark text (readable, never light-on-light) */
+.description { font-size: 1.02rem; color: var(--text); margin: 8px 0 16px; }
+.container-overview .description { font-size: 1.08rem; }
+article, #main p, #main li { color: var(--text); }
+h5 { font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--red-main); margin: 16px 0 6px; }
+dl.details { margin: 14px 0 8px; padding: 10px 0 0; border-top: 1px solid var(--border); font-size: 0.9rem; color: var(--text-muted); }
+dl.details dt { font-weight: 700; color: var(--red-main); }
+.tag-source a, .details a { color: var(--red-main); }
+
+/* ---- tables -------------------------------------------------------------- */
+table.params, table.props {
+  width: 100%; border-collapse: collapse; margin: 14px 0 18px; font-size: 0.96rem;
+  background: var(--white);
+}
+table.params th, table.props th {
+  text-align: left; background: var(--yellow-soft); color: var(--red-deep);
+  font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em;
+  padding: 9px 12px; border: 1px solid var(--border);
+}
+table.params td, table.props td {
+  padding: 9px 12px; border: 1px solid var(--border); vertical-align: top; color: var(--text);
+}
+table.params tr:hover td, table.props tr:hover td { background: var(--yellow-faint); }
+table.params .name, table.params td.type, .param-type, .type .param-type {
+  font-family: var(--mono); color: var(--red-main);
+}
+.params .description p:last-child { margin-bottom: 0; }
+.returns, .type { font-size: 1rem; color: var(--text); }
+
+/* ---- code (light grey, dark text) ---------------------------------------- */
+p code, li code, td code, .description code {
+  background: var(--code-bg); color: var(--red-main);
+  padding: 1px 6px; border-radius: 3px; border: 1px solid var(--border); font-size: 0.92em;
+}
+pre, pre.prettyprint, pre.source, .prettyprint.source {
+  background: var(--code-bg); color: var(--text);
+  border: 1px solid var(--border); border-radius: 3px;
+  padding: 18px 20px; margin: 16px 0; overflow: auto; line-height: 1.55; font-size: 0.92rem;
+}
+pre code, pre.prettyprint code { background: none; color: inherit; padding: 0; border: none; }
+.prettyprint .kwd { color: var(--red-main); }     /* keywords */
+.prettyprint .str { color: var(--yellow-main); }  /* strings  */
+.prettyprint .com { color: var(--text-muted); font-style: italic; } /* comments */
+.prettyprint .typ { color: var(--red-main); }     /* types    */
+.prettyprint .lit { color: var(--yellow-main); }  /* literals */
+.prettyprint .pun { color: var(--text-muted); }
+.prettyprint .pln { color: var(--text); }
+.prettyprint .tag { color: var(--red-main); }
+.prettyprint .atn { color: var(--yellow-main); }
+.prettyprint .atv { color: var(--yellow-main); }
+.prettyprint .dec, .prettyprint .var { color: var(--yellow-main); }
+.prettyprint .fun { color: var(--red-deep); }     /* function names */
+ol.linenums { margin: 0; padding-left: 3.2em; }
+ol.linenums li { color: var(--text-muted); padding-left: 8px; }
+
+/* ---- footer + responsive ------------------------------------------------- */
+footer {
+  margin-left: var(--nav-w); padding: 20px clamp(24px, 5vw, 64px) 40px;
+  color: var(--text-muted); font-size: 0.82rem; border-top: 1px solid var(--border);
+}
+footer a { color: var(--red-main); }
+@media (max-width: 900px) {
+  nav {
+    position: static; width: auto; height: auto; bottom: auto;
+    border-right: none; border-bottom: 1px solid var(--border); max-height: 42vh;
+  }
+  #main, footer { margin-left: 0; padding-left: 18px; padding-right: 18px; }
+  .page-title { font-size: 1.9rem; }
+  .subsection-title { font-size: 1.2rem; }
+  table.params, table.props { display: block; overflow-x: auto; }
+  pre, pre.prettyprint { overflow-x: auto; }
+}
+
+/* ==========================================================================
+   Neutralise every forced off-palette rule in docdash's bundled jsdoc.css.
+   docdash hard-codes off-palette accents (and one dark code background) on the
+   selectors below, some at high specificity or with !important, which out-rank
+   plain overrides. We mirror each exact selector and force the two-colour
+   palette. These are the ONLY !important rules in this stylesheet.
+   ========================================================================== */
+a:active { color: var(--red-deep) !important; }
+nav a:hover, nav a:active { color: var(--red-deep) !important; }
+nav > ul > li > a { color: var(--red-main) !important; }
+nav > h2 > a { color: var(--red-main) !important; }
+nav li.active > a, nav a.active { color: var(--red-deep) !important; }
+nav h3 { color: var(--text) !important; }
+
+/* parameter types — forced off-palette by docdash at high specificity */
+span.param-type, .params td .param-type, .param-type dd, .param-type {
+  color: var(--red-main) !important;
+}
+/* function signature / params — sits inside the red member block */
+.signature, h4.name .signature, h4.name .type-signature { color: var(--yellow-main) !important; }
+
+/* member title block -> solid red, white name, yellow accents */
+h4.name { background: var(--red-main) !important; color: var(--white) !important; box-shadow: none !important; }
+h4.name a, h4.name a:visited { color: var(--yellow-main) !important; }
+h4.name a:hover { color: var(--white) !important; border-bottom-color: var(--yellow-main) !important; }
+
+/* code / source — light surface instead of docdash's dark default */
+.prettyprint.source, .prettyprint code, .prettyprint > code {
+  background-color: var(--code-bg) !important; color: var(--text) !important;
+}
+.prettyprint.linenums li { border-left: 3px solid var(--border) !important; }
+.prettyprint.linenums li.selected,
+.prettyprint.linenums li.selected * { background-color: var(--yellow-soft) !important; }
+
+/* mobile menu icon */
+.navicon, .navicon:before, .navicon:after { background: var(--red-main) !important; }
+
+/* content link underline */
+article a { border-bottom: none; }
+article a:hover, article a:active { border-bottom: 1px solid var(--yellow-main); }
+
+/* ==========================================================================
+   Guarantee the left-nav links are always clickable on file://, regardless of
+   docdash's checkbox/label/overlay markup. Lift the nav and its links into a
+   high stacking context with explicit pointer-events, and make sure the two
+   off-screen <label> toggles can never sit over the links.
+   ========================================================================== */
+nav { z-index: 1000; }
+nav a, nav h2 a, nav .menu-item { position: relative; z-index: 2; pointer-events: auto; }
+.overlay { pointer-events: none; }                 /* desktop: display:none anyway */
+@media (max-width: 680px) { .overlay { pointer-events: auto; } } /* restore for mobile drawer */

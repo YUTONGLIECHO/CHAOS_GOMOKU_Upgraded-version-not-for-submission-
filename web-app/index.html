@@ -1,9 +1,366 @@
-<!-- In HTML Comments are written like this -->
-<!-- They can all be removed for your apps -->
-<!doctype html> <!-- This first line tells browsers to expect modern standard html 5 -->
-<html lang="en-gb"> <!-- This is indicates the page is written in British English, useful for accessibility -->
-<meta charset="utf-8"> <!-- This indicates how the file is encoded. utf-8 is standard -->
-<title>Your Web-app Title</title> <!-- All pages need a title, this will be displayed in the browser's title bar -->
-<link rel="stylesheet" href="default.css"> <!-- Import style sheet – default.css -->
-<link rel="icon" href="./assets/favicon.png"> <!-- Import 'Favorites Icon' – favicon.png -->
-<script type="module" src="main.js"></script> <!-- Load the main script. Must be type="module". Have only one of these -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>CHAOS GOMOKU</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./default.css" />
+
+  <!-- ES module import map: lets bare 'three' / 'three/addons/...' specifiers resolve
+       to the locally vendored copy so the whole game runs offline. -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./vendor/three/three.module.js",
+      "three/addons/": "./vendor/three/addons/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <!-- ============================ CRT overlay ============================ -->
+  <div id="crt-overlay" aria-hidden="true"></div>
+
+  <!-- audio control available on every menu-style screen -->
+  <div id="menu-audio" class="menu-audio">
+    <button id="btn-sound-menu" class="hud-btn">AUDIO: ON</button>
+    <input id="volume-menu" class="vol" type="range" min="0" max="1" step="0.01" value="0.7" aria-label="Volume" />
+  </div>
+
+  <!-- ============================== SPLASH ============================== -->
+  <section id="splash-screen" class="screen active">
+    <div class="splash-box">
+      <h1 class="title-main splash-title">CHAOS <span>GOMOKU</span></h1>
+      <p class="title-sub">Department of Strategic Board Compliance</p>
+      <div id="splash-press" class="splash-press">PRESS ANY KEY TO BEGIN</div>
+      <p class="menu-foot">Click, tap, or press a key. Participation is, technically, voluntary.</p>
+    </div>
+  </section>
+
+  <!-- ============================ MAIN MENU ============================= -->
+  <section id="menu-screen" class="screen">
+    <div class="menu-box">
+      <h1 class="title-main">CHAOS <span>GOMOKU</span></h1>
+      <p class="title-sub">Five in a row. Physics optional.</p>
+      <div class="menu-buttons">
+        <button id="btn-start" class="pixel-btn big">PLAY</button>
+        <button id="btn-howto" class="pixel-btn">HOW TO PLAY</button>
+      </div>
+      <p class="menu-foot">A cursed tabletop where five-in-a-row meets furniture violence.</p>
+    </div>
+  </section>
+
+  <!-- ============================ MODE SELECT =========================== -->
+  <section id="mode-screen" class="screen">
+    <div class="menu-box">
+      <h2 class="title-sm">CHOOSE A MODE</h2>
+      <div class="diff-list">
+        <button id="btn-mode-ai" class="mode-btn pixel-btn">
+          <span class="diff-emoji">🤖</span>
+          <span class="diff-name">PLAYER VS AI</span>
+          <span class="diff-tag">Challenge a machine with confidence issues.</span>
+        </button>
+        <button id="btn-mode-local" class="mode-btn pixel-btn">
+          <span class="diff-emoji">🧑‍🤝‍🧑</span>
+          <span class="diff-name">LOCAL 2 PLAYERS</span>
+          <span class="diff-tag">Two humans. One device. Several future arguments.</span>
+        </button>
+      </div>
+      <button id="btn-mode-back" class="pixel-btn ghost">BACK</button>
+    </div>
+  </section>
+
+  <!-- ========================= DIFFICULTY SELECT ======================= -->
+  <section id="difficulty-screen" class="screen">
+    <div class="menu-box">
+      <h2 class="title-sm">CHOOSE YOUR DOOM</h2>
+      <div class="diff-list">
+        <button class="diff-btn pixel-btn" data-diff="hard">
+          <span class="diff-emoji">🧊</span>
+          <span class="diff-name">EVIL CHESS REFRIGERATOR</span>
+          <span class="diff-tag">multi-step · double threats · low chaos</span>
+        </button>
+        <button class="diff-btn pixel-btn" data-diff="medium">
+          <span class="diff-emoji">🐦</span>
+          <span class="diff-name">SUSPICIOUS PIGEON</span>
+          <span class="diff-tag">blocks wins · limited lookahead</span>
+        </button>
+        <button class="diff-btn pixel-btn" data-diff="easy">
+          <span class="diff-emoji">🍞</span>
+          <span class="diff-name">SLEEPY TOASTER</span>
+          <span class="diff-tag">random · short sight · misses threats</span>
+        </button>
+      </div>
+      <p id="diff-desc" class="diff-desc">Hover a foe to preview its strategy.</p>
+      <button id="btn-diff-back" class="pixel-btn ghost">BACK</button>
+    </div>
+  </section>
+
+  <!-- ============================ HOW TO PLAY =========================== -->
+  <section id="howto-screen" class="screen">
+    <div class="menu-box howto-box">
+      <h2 class="title-sm">HOW TO PLAY</h2>
+      <div class="howto-text">
+        <p><b>GOAL:</b> connect five of your black discs in a row — flat, upright, or diagonal — before the AI does.</p>
+        <p><b>CAMERA (MOUSE):</b> left-drag to orbit, wheel to zoom, right/middle-drag to pan.</p>
+        <p><b>CAMERA (TRACKPAD):</b> one-finger drag to orbit, two-finger drag to pan, pinch (or two-finger scroll) to zoom. Tap to place.</p>
+        <p><b>CAMERA (TOUCH):</b> one finger orbits, pinch zooms, two fingers pan.</p>
+        <p><b>PLACING:</b> tap an empty intersection. A quick tap places; a drag just moves the camera, so you never misfire after spinning the board.</p>
+        <p><b>TURN:</b> place one piece, then optionally fire <em>one</em> skill. Most skills end your turn and go on cooldown.</p>
+        <p><b>SKILLS:</b></p>
+        <ul class="howto-skills">
+          <li>☄ <b>YEET METEOR</b> — launch one enemy piece into orbit. <i>(cd 5)</i></li>
+          <li>⌖ <b>FINDERS KEEPERS</b> — teleport an enemy piece to a random empty cell. <i>(cd 4)</i></li>
+          <li>⚑ <b>SPRING CLEANING</b> — sweep 1–3 random enemy pieces off the board. <i>(cd 7)</i></li>
+          <li>❄ <b>ABSOLUTE ZERO</b> — freeze the foe's skills for one turn. <i>(cd 5)</i></li>
+          <li>⎌ <b>CTRL + Z</b> — undo the opponent's last full turn. <i>(once)</i></li>
+          <li>⇄ <b>CORPORATE RESTRUCTURING</b> — swap the colour of every piece. <i>(once)</i></li>
+          <li>┻ <b>TABLE FLIP</b> — clear the whole board through furniture violence. <i>(once)</i></li>
+        </ul>
+      </div>
+      <button id="btn-howto-back" class="pixel-btn ghost">BACK</button>
+    </div>
+  </section>
+
+  <!-- ========================== CHARACTER SELECT ======================= -->
+  <section id="character-screen" class="screen">
+    <div class="screen-inner char-inner">
+      <h2 class="screen-title">CHOOSE YOUR FIGHTER</h2>
+      <p id="char-help" class="screen-sub">It changes who you are, not how the game plays.</p>
+
+      <div class="char-side" id="char-side-p1">
+        <h3 class="char-side-title" id="char-p1-title">You</h3>
+        <div class="char-grid" role="radiogroup" aria-labelledby="char-p1-title" id="char-grid-p1"></div>
+      </div>
+
+      <div class="char-opponent" id="char-opponent">
+        <span class="char-opp-label">Opponent</span>
+        <img class="character-avatar sm" id="char-opp-avatar" width="48" height="48" alt="" />
+        <span id="char-opp-name">The Adversary (AI)</span>
+      </div>
+
+      <div class="char-side" id="char-side-p2" hidden>
+        <h3 class="char-side-title" id="char-p2-title">Player Two</h3>
+        <div class="char-grid" role="radiogroup" aria-labelledby="char-p2-title" id="char-grid-p2"></div>
+      </div>
+
+      <label class="char-dup" id="char-dup-wrap" hidden>
+        <input type="checkbox" id="char-allow-dup" /> Allow both players to pick the same character
+      </label>
+
+      <div id="char-live" class="sr-only" aria-live="polite"></div>
+
+      <div class="char-actions">
+        <button id="btn-char-back" class="pixel-btn ghost">BACK</button>
+        <button id="btn-char-confirm" class="pixel-btn big">CONFIRM</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== GAME ================================ -->
+  <section id="game-screen" class="screen">
+    <!-- Three.js mounts its canvas here; it fills the screen, HUD floats over it -->
+    <div id="scene-host"></div>
+
+    <!-- Accessible mirror of the board for keyboard + screen-reader users.
+         Visually hidden; built and kept in sync by a11yBoard.js / main.js. -->
+    <div id="board-a11y" class="board-a11y" aria-label="Gomoku board"></div>
+    <div id="a11y-live" class="sr-only" role="status" aria-live="assertive"></div>
+
+    <!-- top: two-level turn status -->
+    <div id="turn-label" class="turn-label state-place" role="status" aria-live="polite">
+      <span id="status-main" class="status-main">YOUR TURN</span>
+      <span id="status-sub" class="status-sub">Place a piece on an empty intersection</span>
+    </div>
+
+    <!-- top-right controls: audio group + navigation group -->
+    <div class="top-controls">
+      <div class="ctrl-group audio">
+        <button id="btn-sound" class="hud-btn">AUDIO: ON</button>
+        <input id="volume" class="vol" type="range" min="0" max="1" step="0.01" value="0.7" aria-label="Volume" />
+        <button id="btn-reduced" class="hud-btn" aria-pressed="false">MOTION: FULL</button>
+      </div>
+      <div class="ctrl-group nav">
+        <button id="btn-handoff" class="hud-btn local-only">HANDOFF: ON</button>
+        <button id="btn-reset-cam" class="hud-btn">RESET CAM</button>
+        <button id="btn-restart" class="hud-btn caution">RESTART</button>
+        <button id="btn-mainmenu" class="hud-btn">MENU</button>
+      </div>
+    </div>
+
+    <!-- left: player panel -->
+    <aside id="panel-player" class="side-panel left active">
+      <div class="panel-head">
+        <div id="portrait-player" class="portrait player"><img id="avatar-player" class="portrait-img" alt="" width="56" height="56" hidden /><span class="portrait-emoji">🧠</span></div>
+        <div class="panel-id">
+          <div id="player-name" class="side-name">LOCAL MEAT COMPUTER</div>
+          <div id="player-role" class="side-role">Black · You</div>
+        </div>
+      </div>
+      <div class="meter">
+        <div class="meter-top"><span class="meter-label">Chaos Ready</span><span id="player-ready" class="meter-val">7/7</span></div>
+        <div id="player-pips" class="pips"></div>
+      </div>
+      <div id="player-status" class="panel-status">Operational, regrettably</div>
+      <div id="player-frozen" class="frozen-badge">❄ FROZEN</div>
+      <div class="turn-flag">▶ ACTIVE TURN</div>
+    </aside>
+
+    <!-- right: opponent panel (AI, or Player Two in local mode) -->
+    <aside id="panel-ai" class="side-panel right">
+      <div class="panel-head">
+        <div id="portrait-ai" class="portrait ai"><img id="avatar-ai" class="portrait-img" alt="" width="56" height="56" hidden /><span class="portrait-emoji">🤖</span></div>
+        <div class="panel-id">
+          <div id="ai-name" class="side-name">PROFESSOR BEEP-BOOP</div>
+          <div id="ai-role" class="side-role">White · AI</div>
+        </div>
+      </div>
+      <div class="meter">
+        <div class="meter-top"><span class="meter-label">Chaos Ready</span><span id="ai-ready" class="meter-val">7/7</span></div>
+        <div id="ai-pips" class="pips"></div>
+      </div>
+      <div id="ai-status" class="panel-status">Plotting quietly</div>
+      <div id="ai-frozen" class="frozen-badge">❄ FROZEN</div>
+      <div class="turn-flag">▶ ACTIVE TURN</div>
+      <div id="ai-speech" class="ai-speech"></div>
+    </aside>
+
+    <!-- bottom: skill tray + end turn -->
+    <!-- bottom: centered confirm button above the skill tray -->
+    <div class="bottom-bar">
+      <div class="confirm-row">
+        <button id="btn-end-turn" class="end-turn-btn" disabled>PLACE A PIECE</button>
+      </div>
+      <div id="skill-grid" class="skill-grid" role="group" aria-label="Skills"></div>
+    </div>
+
+    <!-- shared skill tooltip (kept outside the scrolling tray so it isn't clipped) -->
+    <div id="skill-tip" class="skill-tip" role="tooltip"></div>
+
+    <!-- targeting overlay -->
+    <div id="targeting-banner" class="targeting-banner">SELECT AN ENEMY PIECE</div>
+    <button id="btn-cancel-target" class="hud-btn caution cancel-target">CANCEL (ESC)</button>
+
+    <!-- transient toast -->
+    <div id="toast" class="toast"></div>
+
+    <!-- fake stock chart flashed by Corporate Restructuring -->
+    <div id="stock-chart" class="stock-chart">
+      <svg viewBox="0 0 120 60" preserveAspectRatio="none">
+        <polyline points="0,50 14,46 28,52 42,30 56,38 70,18 84,24 98,8 120,2"
+                  fill="none" stroke="currentColor" stroke-width="3" />
+      </svg>
+      <span>▲ SYNERGY +400%</span>
+    </div>
+
+    <!-- debug readout (DEBUG=false hides it) -->
+    <div id="debug-panel" class="debug-panel"></div>
+
+    <!-- ===================== OPENING ORIENTATION ===================== -->
+    <div id="intro-overlay" class="intro-overlay">
+      <button id="intro-skip" class="intro-skip" type="button">SKIP STORY ▸</button>
+
+      <!-- STAGE 1: system boot terminal (opaque) -->
+      <div id="intro-boot" class="intro-boot">
+        <div class="intro-boot-inner">
+          <div class="intro-boot-dept">DEPARTMENT OF STRATEGIC BOARD COMPLIANCE</div>
+          <pre id="intro-boot-text" class="intro-boot-text"></pre>
+          <div id="intro-ack-wrap" class="intro-ack-wrap">
+            <button id="intro-ack" class="intro-btn" type="button">ACKNOWLEDGE</button>
+            <p class="intro-fine">By continuing, you waive the right to understand the rules.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- system message, top centre -->
+      <div id="intro-sys" class="intro-sys"></div>
+
+      <!-- temporary identity card -->
+      <div id="intro-card" class="intro-card">
+        <div class="intro-card-tag">TEMPORARY ASSET</div>
+        <div class="intro-card-name">LOCAL MEAT COMPUTER</div>
+        <div class="intro-card-line">Status: <b>Organic</b></div>
+        <div class="intro-card-line">Confidence: <b>Unverified</b></div>
+      </div>
+
+      <!-- speaker dialogue, near the opponent side -->
+      <div id="intro-speech" class="intro-speech">
+        <span id="intro-speaker" class="intro-speaker">PROFESSOR BEEP-BOOP</span>
+        <span id="intro-speech-text" class="intro-speech-text"></span>
+      </div>
+
+      <!-- rule panel with OBSOLETE stamp -->
+      <div id="intro-rule" class="intro-rule">
+        <div id="intro-rule-title" class="intro-rule-title">STANDARD OBJECTIVE</div>
+        <div id="intro-rule-body" class="intro-rule-body">Connect five pieces in a row.</div>
+        <div id="intro-stamp" class="intro-stamp">OBSOLETE</div>
+      </div>
+
+      <!-- prompt + call-to-action, bottom centre -->
+      <div id="intro-prompt" class="intro-prompt"></div>
+      <div id="intro-cta" class="intro-cta"></div>
+
+      <!-- player response choices, bottom centre -->
+      <div id="intro-choices" class="intro-choices"></div>
+
+      <!-- stamped flash message (EXIT REQUEST DENIED) -->
+      <div id="intro-flash" class="intro-flash"></div>
+    </div>
+
+    <!-- local 2-player turn handoff banner (static, side-by-side) -->
+    <div id="handoff-overlay" class="handoff-overlay">
+      <div class="handoff-card">
+        <div class="handoff-row">
+          <div class="handoff-side done">
+            <div id="handoff-done-name" class="handoff-name">PLAYER ONE</div>
+            <div class="handoff-tag">COMPLETE</div>
+          </div>
+          <div class="handoff-arrow">➜</div>
+          <div class="handoff-side next">
+            <div id="handoff-next-name" class="handoff-name">PLAYER TWO</div>
+            <div class="handoff-tag">YOUR TURN</div>
+          </div>
+        </div>
+        <div id="handoff-sub" class="handoff-sub">The device has been reassigned. Please release the mouse voluntarily.</div>
+      </div>
+    </div>
+
+    <!-- interactive tutorial overlay (HOW TO PLAY launches this) -->
+    <div id="tutorial-overlay" class="tutorial-overlay">
+      <div class="tut-card">
+        <div class="tut-head">
+          <span id="tut-icon" class="tut-icon">🎮</span>
+          <span id="tut-title" class="tut-title">WELCOME</span>
+        </div>
+        <div id="tut-text" class="tut-text"></div>
+        <div class="tut-foot">
+          <div id="tut-dots" class="tut-dots"></div>
+          <div class="tut-btns">
+            <button id="btn-tut-skip" class="hud-btn caution">SKIP</button>
+            <button id="btn-tut-back" class="pixel-btn ghost">◀ BACK</button>
+            <button id="btn-tut-next" class="pixel-btn">NEXT ▶</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- result overlay -->
+    <div id="result-overlay" class="result-overlay">
+      <div class="result-card">
+        <img id="result-avatar" class="character-avatar result-avatar" width="72" height="72" alt="" hidden />
+        <h2 id="result-title" class="result-title">MEAT COMPUTER WINS</h2>
+        <p id="result-subtitle" class="result-subtitle">Humanity survives another firmware update.</p>
+        <div class="result-buttons">
+          <button id="btn-result-rematch" class="pixel-btn big">REMATCH</button>
+          <button id="btn-result-menu" class="pixel-btn">MAIN MENU</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

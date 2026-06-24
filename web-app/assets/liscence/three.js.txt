@@ -1,0 +1,2 @@
+Three.js (vendored under web-app/vendor/three/) is licensed under the MIT License.
+Copyright (c) 2010-2025 three.js authors. See https://github.com/mrdoob/three.js
