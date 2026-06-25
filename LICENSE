@@ -1,21 +1,25 @@
-MIT License
+CHAOS GOMOKU — Upgraded Version
+Copyright (c) 2026 YUTONGLIECHO
 
-Copyright (c) 2026 CHAOS GOMOKU 3D contributors
+This is a personal, non-commercial project, made for learning and for fun. It is
+an upgraded version of a coursework game and is NOT part of any submission.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+PERMISSIONS
+- You may view, run, study, and modify this project for personal, educational,
+  and other non-commercial purposes.
+- If you build on it or share it, please credit the original author.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+RESTRICTIONS
+- Commercial use of any kind is NOT permitted.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+CREDITS AND INSPIRATION
+- The gameplay and visual style are inspired by various games and references
+  found online; any resemblance is intended as homage, not as endorsement.
+- The character and skill artwork was generated with AI tools.
+- Third-party libraries (such as Three.js and Ramda) remain under their own
+  respective licenses.
+
+NO WARRANTY
+The project is provided "as is", without warranty of any kind, express or
+implied. The author is not liable for any claim, damages, or other liability
+arising from the use of this project.
